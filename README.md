@@ -279,5 +279,4 @@ Docker Desktop Kubernetes exposes services (like `LoadBalancer` or `NodePort`) d
     *   Alternatively, simply **quit Docker Desktop**.
 5.  **(Optional) Reset Kubernetes Cluster:** If you want to ensure a completely clean state for next time without disabling/re-enabling, go to Docker Desktop Settings > Kubernetes > **Reset Kubernetes Cluster**. Use with caution, this deletes all deployed resources.
 6.  **(Optional) Logout from Docker Hub:** `docker logout`
-7.  **(Optional) Remove Docker Images:** `docker rmi atharva621/image:tag ...` (list all the images built).#   M o n o l i t h i c - v s - M i c r o s e r v i c e s - D e m o  
- 
+7.  **(Optional) Remove Docker Images:** `docker rmi atharva621/image:tag ...` (list all the images built).
