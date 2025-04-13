@@ -1,0 +1,48 @@
+# comparative-demo/kubernetes/01-user-service.yaml (MODIFIED FOR LOCAL IMAGES & LOADBALANCER)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-deployment
+spec:
+  replicas: 1 # Start with 1 pod
+  selector:
+    matchLabels:
+      app: user-service # Pods with this label are managed by this Deployment
+  template: # Pod template
+    metadata:
+      labels:
+        app: user-service # Label applied to Pods
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:v1   # <<<=== CHANGED: Removed username prefix
+        imagePullPolicy: Never     # <<<=== ADDED: Use the locally built image only
+        ports:
+        - containerPort: 5001 # Port the app listens on inside the container
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service # DNS name other services use to reach this (e.g., http://user-service:5001)
+spec:
+  selector:
+    app: user-service # Routes traffic to Pods with label app=user-service
+  ports:
+    - protocol: TCP
+      port: 5001       # Port the Service listens on (internally AND externally for LoadBalancer)
+      targetPort: 5001 # Port on the Pod to forward traffic to
+  type: LoadBalancer   # <<<=== CHANGED: Use LoadBalancer for easier access on localhost:5001 (on Docker Desktop)
+  # nodePort field is not used with type: LoadBalancer

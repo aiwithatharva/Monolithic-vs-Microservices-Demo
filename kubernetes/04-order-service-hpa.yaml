@@ -1,0 +1,48 @@
+apiVersion: autoscaling/v2 # Use v2 for CPU/Memory utilization targets
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa # Name of the HPA resource itself
+spec:
+  scaleTargetRef: # Specifies the Deployment this HPA targets
+    apiVersion: apps/v1 # API version of the target resource
+    kind: Deployment # Kind of the target resource
+    name: order-service-deployment # Name MUST exactly match your Deployment's name
+  minReplicas: 1 # Minimum number of pods Kubernetes will scale down to
+  maxReplicas: 4 # Maximum number of pods Kubernetes will scale up to
+  metrics:
+  # Define the metrics to base scaling decisions on
+  - type: Resource # Scale based on pod resource consumption
+    resource:
+      name: cpu # Scale based on CPU
+      target:
+        type: Utilization # Target a percentage of the requested CPU
+        # NOTE: 30% is VERY LOW and only suitable for this demo to trigger scaling easily.
+        # Real-world applications usually target 60-80%.
+        averageUtilization: 30 # Target average CPU utilization across all pods
+  # --- Optional: Add Memory-based scaling as well ---
+  # - type: Resource
+  #   resource:
+  #     name: memory
+  #     target:
+  #       # Can use 'Utilization' (percentage of request) or 'AverageValue' (absolute value like 100Mi)
+  #       type: Utilization
+  #       averageUtilization: 70 # Target 70% memory utilization
+
+  # --- Optional: Behavior section to control scale-up/down speed (K8s 1.18+) ---
+  # behavior:
+  #   scaleDown:
+  #     stabilizationWindowSeconds: 300 # Default: 300 (5 minutes) - Wait this long after last scale down
+  #     policies:
+  #     - type: Percent
+  #       value: 100 # Allow removing 100% of current replicas in one go (down to minReplicas)
+  #       periodSeconds: 15
+  #   scaleUp:
+  #     stabilizationWindowSeconds: 0 # Default: 0 - Scale up immediately
+  #     policies:
+  #     - type: Percent
+  #       value: 100 # Allow adding 100% of current replicas
+  #       periodSeconds: 15
+  #     - type: Pods
+  #       value: 2 # Allow adding up to 2 pods
+  #       periodSeconds: 15
+  #     selectPolicy: Max # Choose the policy that allows the biggest increase

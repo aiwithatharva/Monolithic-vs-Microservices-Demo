@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monolith vs Microservices Demo</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.5; margin: 20px; }
+        .container { display: flex; gap: 30px; flex-wrap: wrap; }
+        .service-section { border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-width: 400px; flex: 1; }
+        h2, h3 { margin-top: 0; }
+        label { display: block; margin-bottom: 3px; font-weight: bold; }
+        input[type="text"] { width: calc(100% - 12px); padding: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 3px; }
+        button { padding: 8px 15px; margin-right: 5px; margin-bottom: 10px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 3px; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        pre { background-color: #f0f0f0; border: 1px solid #ddd; padding: 10px; white-space: pre-wrap; word-wrap: break-word; min-height: 50px; max-height: 200px; overflow-y: auto; }
+        .config-section, .autoscaling-section { background-color: #eef; border: 1px solid #bbf; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+        #load-status { font-style: italic; margin-left: 10px; }
+        .load-buttons button { background-color: #28a745; }
+        .load-buttons button:hover { background-color: #218838; }
+        .load-buttons button#stop-load-btn { background-color: #dc3545; }
+        .load-buttons button#stop-load-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+
+    <h1>Monolith vs Microservices Kubernetes Demo</h1>
+
+    <div class="config-section">
+        <h3>Configuration (Backend URLs)</h3>
+        <p>Verify these URLs. If running locally without Minikube port-forwarding, they might be correct. Otherwise, get URLs using <code>minikube service <service-name> --url</code>.</p>
+        <label for="mono-base-url">Monolith Base URL:</label>
+        <input type="text" id="mono-base-url" placeholder="e.g., http://127.0.0.1:xxxxx" value="http://localhost:5000">
+
+        <label for="ms-user-url">Microservice User Base URL:</label>
+        <input type="text" id="ms-user-url" placeholder="e.g., http://127.0.0.1:aaaaa" value="http://localhost:5001">
+
+        <label for="ms-product-url">Microservice Product Base URL:</label>
+        <input type="text" id="ms-product-url" placeholder="e.g., http://127.0.0.1:bbbbb" value="http://localhost:5002">
+
+        <label for="ms-order-url">Microservice Order Base URL:</label>
+        <input type="text" id="ms-order-url" placeholder="e.g., http://127.0.0.1:ccccc" value="http://localhost:5003">
+        <button id="update-urls-btn">Update URLs</button>
+        <span id="url-status"></span>
+    </div>
+
+    <div class="container">
+
+        <!-- Monolith Section -->
+        <div class="service-section">
+            <h2>Monolith Actions</h2>
+
+            <div>
+                <h3>User</h3>
+                <label for="mono-username">Username:</label>
+                <input type="text" id="mono-username" value="MonoUser1">
+                <button id="mono-create-user-btn">Create User</button>
+            </div>
+
+            <div>
+                <h3>Product</h3>
+                <label for="mono-product-id">Product ID:</label>
+                <input type="text" id="mono-product-id" value="prod123">
+                <button id="mono-get-product-btn">Get Product</button>
+            </div>
+
+            <div>
+                <h3>Order</h3>
+                <label for="mono-order-user-id">User ID:</label>
+                <input type="text" id="mono-order-user-id" placeholder="User ID from Create User">
+                <label for="mono-order-product-id">Product ID:</label>
+                <input type="text" id="mono-order-product-id" value="prod123">
+                <button id="mono-create-order-btn">Create Order</button>
+            </div>
+
+            <h3>Monolith Response:</h3>
+            <pre id="mono-response-area">Responses will appear here...</pre>
+        </div>
+
+        <!-- Microservices Section -->
+        <div class="service-section">
+            <h2>Microservice Actions</h2>
+
+            <div>
+                <h3>User</h3>
+                <label for="ms-username">Username:</label>
+                <input type="text" id="ms-username" value="MicroUser1">
+                <button id="ms-create-user-btn">Create User</button>
+                <span id="ms-user-id-display" style="font-size: 0.9em; margin-left: 10px;"></span>
+            </div>
+
+            <div>
+                <h3>Product</h3>
+                <label for="ms-product-id">Product ID:</label>
+                <input type="text" id="ms-product-id" value="prod456">
+                <button id="ms-get-product-btn">Get Product</button>
+            </div>
+
+            <div>
+                <h3>Order</h3>
+                <label for="ms-order-user-id">User ID:</label>
+                <input type="text" id="ms-order-user-id" placeholder="User ID from Create User">
+                <label for="ms-order-product-id">Product ID:</label>
+                <input type="text" id="ms-order-product-id" value="prod456">
+                <button id="ms-create-order-btn">Create Order</button>
+            </div>
+
+            <h3>Microservices Response:</h3>
+            <pre id="ms-response-area">Responses will appear here...</pre>
+        </div>
+
+    </div>
+
+    <div class="autoscaling-section">
+        <h2>Autoscaling Demo (Microservice Order Service)</h2>
+        <p>Click one of the load buttons to repeatedly send requests to the Microservice Order endpoint. Watch HPA status with <code>kubectl get hpa -w</code> and pods with <code>kubectl get pods -l app=order-service -w</code> (adjust label if needed).</p>
+        <div class="load-buttons">
+            <button id="low-load-btn">Start Low Load (1 req/2s)</button>
+            <button id="medium-load-btn">Start Medium Load (2 req/s)</button>
+            <button id="high-load-btn">Start High Load (10 req/s)</button>
+            <button id="stop-load-btn" disabled>Stop Load</button>
+            <span id="load-status">Load generation inactive.</span>
+        </div>
+        <h3>Load Response Area (Errors/Status Only):</h3>
+        <pre id="load-response-area"></pre>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

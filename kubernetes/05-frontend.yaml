@@ -1,0 +1,48 @@
+# comparative-demo/kubernetes/05-frontend.yaml (MODIFIED FOR LOCAL IMAGES & LOADBALANCER)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: frontend-app:v1   # <<<=== CHANGED: Removed username prefix
+        imagePullPolicy: Never     # <<<=== ADDED: Use the locally built image only
+        ports:
+        - containerPort: 80 # Nginx serves on port 80 by default
+        readinessProbe: # Check if nginx index page is available
+          httpGet:
+            path: /index.html # Or just /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /index.html # Or just /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend # Routes traffic to Pods with label app=frontend
+  ports:
+    - protocol: TCP
+      port: 80         # Port the Service listens on (internally AND externally for LoadBalancer)
+      targetPort: 80   # Port on the Pod (nginx container) to forward traffic to
+  type: LoadBalancer   # <<<=== CHANGED: Use LoadBalancer for easier access on localhost:80 (on Docker Desktop)
+  # nodePort field is not used with type: LoadBalancer

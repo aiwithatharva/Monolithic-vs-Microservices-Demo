@@ -1,0 +1,48 @@
+# comparative-demo/kubernetes/00-monolith.yaml (MODIFIED FOR LOCAL IMAGES & LOADBALANCER)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monolith-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monolith
+  template:
+    metadata:
+      labels:
+        app: monolith
+    spec:
+      containers:
+      - name: monolith
+        image: monolith-app:v1   # <<<=== CHANGED: Removed username prefix
+        imagePullPolicy: Never     # <<<=== ADDED: Use the locally built image only
+        ports:
+        - containerPort: 5000
+        readinessProbe: # Optional: K8s checks this endpoint before marking pod Ready
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe: # Optional: K8s checks this to see if container needs restarting
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monolith-service
+spec:
+  selector:
+    app: monolith # Routes traffic to Pods with label app=monolith
+  ports:
+    - protocol: TCP
+      port: 5000       # Port the Service listens on (internally AND externally for LoadBalancer)
+      targetPort: 5000 # Port on the Pod to forward traffic to
+  type: LoadBalancer   # <<<=== CHANGED: Use LoadBalancer for easier access on localhost:5000 (on Docker Desktop)
+  # nodePort field is not used with type: LoadBalancer

@@ -1,0 +1,48 @@
+# comparative-demo/kubernetes/02-product-service.yaml (MODIFIED FOR LOCAL IMAGES & LOADBALANCER)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+      - name: product-service
+        image: product-service:v1   # <<<=== CHANGED: Removed username prefix
+        imagePullPolicy: Never      # <<<=== ADDED: Use the locally built image only
+        ports:
+        - containerPort: 5002
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service # DNS name (e.g., http://product-service:5002)
+spec:
+  selector:
+    app: product-service
+  ports:
+    - protocol: TCP
+      port: 5002       # Port the Service listens on (internally AND externally for LoadBalancer)
+      targetPort: 5002 # Port on the Pod to forward traffic to
+  type: LoadBalancer   # <<<=== CHANGED: Use LoadBalancer for easier access on localhost:5002 (on Docker Desktop)
+  # nodePort field is not used with type: LoadBalancer
